@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Rapor Salsabila Klaseman</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <style>
+        :root {
+            --primary-color: #4e73df;
+            --secondary-color: #858796;
+            --success-color: #1cc88a;
+            --info-color: #36b9cc;
+            --warning-color: #f6c23e;
+            --danger-color: #e74a3b;
+            --light-color: #f8f9fc;
+            --dark-color: #5a5c69;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--light-color);
+            color: var(--dark-color);
+            font-size: 14px;
+        }
+
+        .wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background-color: var(--primary-color);
+            color: white;
+            transition: all 0.3s;
+        }
+
+        .sidebar-brand {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+
+        .sidebar-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .sidebar-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-item i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar-item.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-left: 4px solid white;
+        }
+
+        /* Main Content */
+        .content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .content-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-info img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        /* Cards */
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e3e6f0;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #d1d3e2;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            display: inline-block;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #2e59d9;
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #17a673;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background-color: #dda20a;
+        }
+
+        .btn-info {
+            background-color: var(--info-color);
+            color: white;
+        }
+
+        .btn-info:hover {
+            background-color: #2c9faf;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        /* Table */
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th, .table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e3e6f0;
+        }
+
+        .table th {
+            background-color: #f8f9fc;
+            font-weight: 600;
+            color: var(--primary-color);
+            border-top: none;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            animation: slideIn 0.3s;
+        }
+
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e3e6f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .modal-close {
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--secondary-color);
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #e3e6f0;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        /* Rapor */
+        .rapor {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            padding: 30px;
+            margin: 20px auto;
+            max-width: 800px;
+        }
+
+        .rapor-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .rapor-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .rapor-subtitle {
+            font-size: 18px;
+            color: var(--secondary-color);
+        }
+
+        .rapor-info {
+            margin-bottom: 20px;
+        }
+
+        .rapor-info p {
+            margin-bottom: 5px;
+        }
+
+        .rapor-section {
+            margin-bottom: 20px;
+        }
+
+        .rapor-section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .rapor-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .rapor-table th, .rapor-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .rapor-table th {
+            background-color: #f2f2f2;
+        }
+
+        .rapor-signature {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+
+        .rapor-signature-box {
+            text-align: center;
+            width: 45%;
+        }
+
+        .rapor-signature-line {
+            height: 1px;
+            background-color: black;
+            margin: 40px 0 5px;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .wrapper {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+            }
+            
+            .content {
+                padding: 10px;
+            }
+            
+            .modal-content {
+                width: 95%;
+                margin: 10% auto;
+            }
+        }
+
+        .no-print {
+            display: block;
+        }
+
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+
+        /* Loading indicator */
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .loading-spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Alert */
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .alert-info {
+            color: #0c5460;
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+        }
+
+        .alert-warning {
+            color: #856404;
+            background-color: #fff3cd;
+            border-color: #ffeeba;
+        }
+
+        .close-alert {
+            float: right;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loadingIndicator">
+        <div class="loading-spinner"></div>
+        <p>Memproses data...</p>
+    </div>
+
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-brand">
+                <i class="fas fa-graduation-cap"></i> E-Rapor Salsabila
+            </div>
+            <div class="sidebar-menu">
+                <div class="sidebar-item active" onclick="showSection('dashboard')">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </div>
+                <div class="sidebar-item" onclick="showSection('input')">
+                    <i class="fas fa-plus-circle"></i> Input Penilaian
+                </div>
+                <div class="sidebar-item" onclick="showSection('data')">
+                    <i class="fas fa-table"></i> Data Penilaian
+                </div>
+                <div class="sidebar-item" onclick="showSection('chart')">
+                    <i class="fas fa-chart-bar"></i> Grafik
+                </div>
+                <div class="sidebar-item" onclick="showSection('rekap')">
+                    <i class="fas fa-clipboard-list"></i> Rekap Kelas
+                </div>
+                <div class="sidebar-item" onclick="showSection('rapor')">
+                    <i class="fas fa-file-alt"></i> Cetak Rapor
+                </div>
+                <div class="sidebar-item" onclick="showSection('sync')">
+                    <i class="fas fa-sync"></i> Sinkronisasi
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <div class="content-header">
+                <h1 class="content-title">Dashboard</h1>
+                <div class="user-info">
+                    <span>Guru</span>
+                    <img src="https://i.imgur.com/0DQ3Q4V.jpg" alt="User">
+                </div>
+            </div>
+
+            <!-- Dashboard Section -->
+            <div id="dashboard-section" class="content-section">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Siswa</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalSiswa">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Penilaian</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalPenilaian">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-clipboard-check fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Rata-rata Nilai</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="rataNilai">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Kelas</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalKelas">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-school fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Penilaian Terbaru</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>NIS</th>
+                                        <th>Nama</th>
+                                        <th>Kelas</th>
+                                        <th>Mapel</th>
+                                        <th>Nilai</th>
+                                        <th>Predikat</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentPenilaian">
+                                    <tr>
+                                        <td colspan="7" class="text-center">Tidak ada data</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Section -->
+            <div id="input-section" class="content-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Input Penilaian Harian</h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="formPenilaian">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="tanggal">Tanggal</label>
+                                        <input type="date" id="tanggal" class="form-control" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="nis">NIS</label>
+                                        <input type="text" id="nis" class="form-control" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="nama">Nama Siswa</label>
+                                        <input type="text" id="nama" class="form-control" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="kelas">Kelas</label>
+                                        <input type="text" id="kelas" class="form-control" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="mapel">Mata Pelajaran</label>
+                                        <input type="text" id="mapel" class="form-control" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="aspek">Aspek Penilaian</label>
+                                        <input type="text" id="aspek" class="form-control" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="deskripsi">Deskripsi</label>
+                                <input type="text" id="deskripsi" class="form-control" required>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="nilai">Nilai</label>
+                                        <input type="number" id="nilai" class="form-control" min="0" max="100" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>&nbsp;</label>
+                                        <div>
+                                            <button type="submit" class="btn btn-primary">Simpan</button>
+                                            <button type="reset" class="btn btn-warning">Reset</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Section -->
+            <div id="data-section" class="content-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Data Penilaian</h6>
+                        <div>
+                            <button class="btn btn-success btn-sm" onclick="exportToExcel()">
+                                <i class="fas fa-file-excel"></i> Export Excel
+                            </button>
+                            <label class="btn btn-info btn-sm">
+                                <i class="fas fa-file-import"></i> Import Excel
+                                <input type="file" id="importExcel" onchange="importFromExcel(event)" style="display: none;">
+                            </label>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="filterSiswa">Filter Siswa</label>
+                            <select id="filterSiswa" class="form-control" onchange="filterData()">
+                                <option value="">-- Semua Siswa --</option>
+                            </select>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>NIS</th>
+                                        <th>Nama</th>
+                                        <th>Kelas</th>
+                                        <th>Mapel</th>
+                                        <th>Aspek</th>
+                                        <th>Deskripsi</th>
+                                        <th>Nilai</th>
+                                        <th>Predikat</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelBody">
+                                    <tr>
+                                        <td colspan="10" class="text-center">Tidak ada data</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart Section -->
+            <div id="chart-section" class="content-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Grafik Perkembangan Siswa</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="pilihSiswaGrafik">Pilih Siswa</label>
+                            <select id="pilihSiswaGrafik" class="form-control" onchange="tampilkanGrafik()">
+                                <option value="">-- Pilih Siswa --</option>
+                            </select>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="grafikPerkembangan"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rekap Section -->
+            <div id="rekap-section" class="content-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Rekap Nilai per Kelas</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="pilihKelas">Pilih Kelas</label>
+                            <select id="pilihKelas" class="form-control" onchange="tampilkanRekapKelas()">
+                                <option value="">-- Pilih Kelas --</option>
+                            </select>
+                        </div>
+                        <div id="rekapKelas"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rapor Section -->
+            <div id="rapor-section" class="content-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Cetak Rapor</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="pilihSiswaRapor">Pilih Siswa</label>
+                            <select id="pilihSiswaRapor" class="form-control" onchange="tampilkanRapor()">
+                                <option value="">-- Pilih Siswa --</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="window.print()">
+                            <i class="fas fa-print"></i> Cetak Rapor
+                        </button>
+                    </div>
+                </div>
+                <div id="raporContainer"></div>
+            </div>
+
+            <!-- Sync Section -->
+            <div id="sync-section" class="content-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Sinkronisasi dengan Firebase</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Fitur ini akan menghubungkan data lokal dengan Firebase untuk memungkinkan akses dari mana saja.
+                        </div>
+                        <div class="text-center">
+                            <button class="btn btn-success" onclick="sinkronkanKeFirebase()">
+                                <i class="fas fa-cloud-upload-alt"></i> Upload ke Firebase
+                            </button>
+                            <button class="btn btn-primary" onclick="ambilDariFirebase()">
+                                <i class="fas fa-cloud-download-alt"></i> Ambil dari Firebase
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Edit Data -->
+    <div id="modalEdit" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Data Penilaian</h5>
+                <span class="modal-close" onclick="tutupModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="formEdit">
+                    <input type="hidden" id="editIndex">
+                    <div class="form-group">
+                        <label for="editTanggal">Tanggal</label>
+                        <input type="date" id="editTanggal" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editNis">NIS</label>
+                        <input type="text" id="editNis" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editNama">Nama Siswa</label>
+                        <input type="text" id="editNama" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editKelas">Kelas</label>
+                        <input type="text" id="editKelas" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editMapel">Mata Pelajaran</label>
+                        <input type="text" id="editMapel" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAspek">Aspek Penilaian</label>
+                        <input type="text" id="editAspek" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editDeskripsi">Deskripsi</label>
+                        <input type="text" id="editDeskripsi" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editNilai">Nilai</label>
+                        <input type="number" id="editNilai" class="form-control" min="0" max="100" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="tutupModal()">Batal</button>
+                <button type="button" class="btn btn-primary" onclick="simpanEditData()">Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCQQcgPoQMIeCn3tSkn7NAks2cRFTV8Df4",
+            authDomain: "e-rapor-salsabila-klaseman.firebaseapp.com",
+            databaseURL: "https://e-rapor-salsabila-klaseman-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "e-rapor-salsabila-klaseman",
+            storageBucket: "e-rapor-salsabila-klaseman.firebasestorage.app",
+            messagingSenderId: "519176085482",
+            appId: "1:519176085482:web:66dc1c0e4264a8af911c93",
+            measurementId: "G-XJTP2RYMMC"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        let data = [];
+        let grafikInstance = null;
+
+        // Show loading indicator
+        function showLoading() {
+            document.getElementById('loadingIndicator').style.display = 'flex';
+        }
+
+        // Hide loading indicator
+        function hideLoading() {
+            document.getElementById('loadingIndicator').style.display = 'none';
+        }
+
+        // Show alert message
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `
+                ${message}
+                <span class="close-alert" onclick="this.parentElement.remove()">&times;</span>
+            `;
+            document.querySelector('.content-header').after(alertDiv);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        // Load data dari localStorage
+        function loadDataFromLocalStorage() {
+            const storedData = localStorage.getItem('penilaian_harian');
+            if (storedData) {
+                data = JSON.parse(storedData);
+            } else {
+                data = [];
+            }
+            updateDashboard();
+            tampilkanPilihanSiswa();
+            tampilkanData();
+            tampilkanRecentPenilaian();
+        }
+
+        // Simpan data ke localStorage
+        function saveDataToLocalStorage() {
+            localStorage.setItem('penilaian_harian', JSON.stringify(data));
+            updateDashboard();
+            tampilkanRecentPenilaian();
+        }
+
+        // Update Dashboard
+        function updateDashboard() {
+            const daftarSiswa = ambilDaftarSiswa();
+            const daftarKelas = ambilDaftarKelas();
+            
+            document.getElementById('totalSiswa').textContent = daftarSiswa.length;
+            document.getElementById('totalPenilaian').textContent = data.length;
+            document.getElementById('totalKelas').textContent = daftarKelas.length;
+            
+            if (data.length > 0) {
+                const totalNilai = data.reduce((sum, item) => sum + item.nilai, 0);
+                const rataNilai = (totalNilai / data.length).toFixed(2);
+                document.getElementById('rataNilai').textContent = rataNilai;
+            } else {
+                document.getElementById('rataNilai').textContent = '0';
+            }
+        }
+
+        // Tampilkan penilaian terbaru di dashboard
+        function tampilkanRecentPenilaian() {
+            const tbody = document.getElementById('recentPenilaian');
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">Tidak ada data</td></tr>';
+                return;
+            }
+            
+            // Sort by tanggal descending
+            const sortedData = [...data].sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+            
+            // Show only 5 most recent
+            const recentData = sortedData.slice(0, 5);
+            
+            recentData.forEach(item => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${item.tanggal}</td>
+                    <td>${item.nis}</td>
+                    <td>${item.nama}</td>
+                    <td>${item.kelas}</td>
+                    <td>${item.mapel}</td>
+                    <td>${item.nilai}</td>
+                    <td>${item.predikat}</td>
+                `;
+            });
+        }
+
+        // Fungsi Firebase
+        function sinkronkanKeFirebase() {
+            if (confirm('Apakah Anda yakin ingin mengupload data ke Firebase?')) {
+                showLoading();
+                
+                database.ref('penilaian').set(data)
+                    .then(() => {
+                        hideLoading();
+                        showAlert('Data berhasil diupload ke Firebase!', 'success');
+                    })
+                    .catch((error) => {
+                        hideLoading();
+                        showAlert('Error: ' + error.message, 'danger');
+                    });
+            }
+        }
+
+        function ambilDariFirebase() {
+            if (confirm('Apakah Anda yakin ingin mengambil data dari Firebase? Data lokal akan ditimpa.')) {
+                showLoading();
+                
+                database.ref('penilaian').once('value')
+                    .then((snapshot) => {
+                        data = snapshot.val() || [];
+                        saveDataToLocalStorage();
+                        tampilkanPilihanSiswa();
+                        tampilkanData();
+                        updateDashboard();
+                        tampilkanRecentPenilaian();
+                        hideLoading();
+                        showAlert('Data berhasil diambil dari Firebase!', 'success');
+                    })
+                    .catch((error) => {
+                        hideLoading();
+                        showAlert('Error: ' + error.message, 'danger');
+                    });
+            }
+        }
+
+        function hitungPredikat(nilai) {
+            if (nilai >= 90) return 'A';
+            else if (nilai >= 80) return 'B';
+            else if (nilai >= 70) return 'C';
+            else return 'D';
+        }
+
+        function ambilDaftarSiswa() {
+            const siswaSet = new Set();
+            data.forEach(item => {
+                siswaSet.add(JSON.stringify({ nis: item.nis, nama: item.nama, kelas: item.kelas }));
+            });
+            return Array.from(siswaSet).map(item => JSON.parse(item));
+        }
+
+        function ambilDaftarKelas() {
+            const kelasSet = new Set();
+            data.forEach(item => {
+                kelasSet.add(item.kelas);
+            });
+            return Array.from(kelasSet);
+        }
+
+        function tampilkanPilihanSiswa() {
+            const filterSelect = document.getElementById('filterSiswa');
+            const raporSelect = document.getElementById('pilihSiswaRapor');
+            const grafikSelect = document.getElementById('pilihSiswaGrafik');
+            const daftarSiswa = ambilDaftarSiswa();
+            
+            filterSelect.innerHTML = '<option value="">-- Semua Siswa --</option>';
+            raporSelect.innerHTML = '<option value="">-- Pilih Siswa --</option>';
+            grafikSelect.innerHTML = '<option value="">-- Pilih Siswa --</option>';
+            
+            daftarSiswa.forEach(siswa => {
+                const optionFilter = document.createElement('option');
+                optionFilter.value = siswa.nis;
+                optionFilter.textContent = `${siswa.nis} - ${siswa.nama} (${siswa.kelas})`;
+                filterSelect.appendChild(optionFilter);
+                
+                const optionRapor = document.createElement('option');
+                optionRapor.value = siswa.nis;
+                optionRapor.textContent = `${siswa.nis} - ${siswa.nama} (${siswa.kelas})`;
+                raporSelect.appendChild(optionRapor);
+                
+                const optionGrafik = document.createElement('option');
+                optionGrafik.value = siswa.nis;
+                optionGrafik.textContent = `${siswa.nis} - ${siswa.nama} (${siswa.kelas})`;
+                grafikSelect.appendChild(optionGrafik);
+            });
+
+            // Tampilkan pilihan kelas
+            const kelasSelect = document.getElementById('pilihKelas');
+            const daftarKelas = ambilDaftarKelas();
+            kelasSelect.innerHTML = '<option value="">-- Pilih Kelas --</option>';
+            daftarKelas.forEach(kelas => {
+                const option = document.createElement('option');
+                option.value = kelas;
+                option.textContent = kelas;
+                kelasSelect.appendChild(option);
+            });
+        }
+
+        function tampilkanData(dataToShow = data) {
+            const tbody = document.getElementById('tabelBody');
+            tbody.innerHTML = '';
+            
+            if (dataToShow.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" class="text-center">Tidak ada data</td></tr>';
+                return;
+            }
+            
+            dataToShow.forEach((item, index) => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${item.tanggal}</td>
+                    <td>${item.nis}</td>
+                    <td>${item.nama}</td>
+                    <td>${item.kelas}</td>
+                    <td>${item.mapel}</td>
+                    <td>${item.aspek}</td>
+                    <td>${item.deskripsi}</td>
+                    <td>${item.nilai}</td>
+                    <td>${item.predikat}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="editData(${index})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="hapusData(${index})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+            });
+        }
+
+        function filterData() {
+            const nis = document.getElementById('filterSiswa').value;
+            if (nis) {
+                const filteredData = data.filter(item => item.nis === nis);
+                tampilkanData(filteredData);
+            } else {
+                tampilkanData();
+            }
+        }
+
+        function editData(index) {
+            const item = data[index];
+            document.getElementById('editIndex').value = index;
+            document.getElementById('editTanggal').value = item.tanggal;
+            document.getElementById('editNis').value = item.nis;
+            document.getElementById('editNama').value = item.nama;
+            document.getElementById('editKelas').value = item.kelas;
+            document.getElementById('editMapel').value = item.mapel;
+            document.getElementById('editAspek').value = item.aspek;
+            document.getElementById('editDeskripsi').value = item.deskripsi;
+            document.getElementById('editNilai').value = item.nilai;
+            document.getElementById('modalEdit').style.display = 'block';
+        }
+
+        function tutupModal() {
+            document.getElementById('modalEdit').style.display = 'none';
+        }
+
+        function simpanEditData() {
+            const index = document.getElementById('editIndex').value;
+            const nilai = parseInt(document.getElementById('editNilai').value);
+            data[index] = {
+                tanggal: document.getElementById('editTanggal').value,
+                nis: document.getElementById('editNis').value,
+                nama: document.getElementById('editNama').value,
+                kelas: document.getElementById('editKelas').value,
+                mapel: document.getElementById('editMapel').value,
+                aspek: document.getElementById('editAspek').value,
+                deskripsi: document.getElementById('editDeskripsi').value,
+                nilai: nilai,
+                predikat: hitungPredikat(nilai)
+            };
+            saveDataToLocalStorage();
+            tampilkanData();
+            tampilkanPilihanSiswa();
+            tutupModal();
+            showAlert('Data berhasil diperbarui!', 'success');
+        }
+
+        function hapusData(index) {
+            if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
+                data.splice(index, 1);
+                saveDataToLocalStorage();
+                tampilkanData();
+                tampilkanPilihanSiswa();
+                showAlert('Data berhasil dihapus!', 'warning');
+            }
+        }
+
+        function tampilkanRapor() {
+            const nis = document.getElementById('pilihSiswaRapor').value;
+            if (!nis) {
+                document.getElementById('raporContainer').innerHTML = '';
+                return;
+            }
+
+            const siswa = ambilDaftarSiswa().find(s => s.nis === nis);
+            const nilaiSiswa = data.filter(item => item.nis === nis);
+
+            let html = `
+                <div class="rapor">
+                    <div class="rapor-header">
+                        <div class="rapor-title">RAPOR HASIL BELAJAR SISWA</div>
+                        <div class="rapor-subtitle">KURIKULUM MERDEKA - SEMESTER 1</div>
+                    </div>
+                    <div class="rapor-info">
+                        <p><strong>NIS:</strong> ${siswa.nis}</p>
+                        <p><strong>Nama Siswa:</strong> ${siswa.nama}</p>
+                        <p><strong>Kelas:</strong> ${siswa.kelas}</p>
+                        <p><strong>Semester:</strong> 1</p>
+                        <p><strong>Tahun Ajaran:</strong> 2025/2026</p>
+                    </div>
+                    <div class="rapor-section">
+                        <div class="rapor-section-title">A. NILAI HASIL BELAJAR</div>
+                        <table class="rapor-table">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Mata Pelajaran</th>
+                                    <th>Aspek</th>
+                                    <th>Nilai</th>
+                                    <th>Predikat</th>
+                                    <th>Deskripsi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+
+            nilaiSiswa.forEach((item, index) => {
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${item.mapel}</td>
+                        <td>${item.aspek}</td>
+                        <td>${item.nilai}</td>
+                        <td>${item.predikat}</td>
+                        <td>${item.deskripsi}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="rapor-section">
+                        <div class="rapor-section-title">B. DESKRIPSI PERKEMBANGAN</div>
+                        <p>- Sikap: Siswa menunjukkan sikap tanggung jawab dan kerja sama dalam kelompok.</p>
+                        <p>- Pengetahuan: Siswa memahami konsep dasar dengan baik.</p>
+                        <p>- Keterampilan: Siswa dapat menerapkan pengetahuan dalam praktik.</p>
+                    </div>
+                    <div class="rapor-signature">
+                        <div class="rapor-signature-box">
+                            <p>Wali Kelas</p>
+                            <div class="rapor-signature-line"></div>
+                            <p>NIP. ....................</p>
+                        </div>
+                        <div class="rapor-signature-box">
+                            <p>Orang Tua/Wali</p>
+                            <div class="rapor-signature-line"></div>
+                            <p>............................</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('raporContainer').innerHTML = html;
+        }
+
+        function tampilkanGrafik() {
+            const nis = document.getElementById('pilihSiswaGrafik').value;
+            if (!nis) return;
+
+            const nilaiSiswa = data.filter(item => item.nis === nis);
+            const labels = nilaiSiswa.map(item => item.mapel + ' (' + item.aspek + ')');
+            const nilai = nilaiSiswa.map(item => item.nilai);
+
+            const ctx = document.getElementById('grafikPerkembangan').getContext('2d');
+            
+            if (grafikInstance) {
+                grafikInstance.destroy();
+            }
+            
+            grafikInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Nilai',
+                        data: nilai,
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        function tampilkanRekapKelas() {
+            const kelas = document.getElementById('pilihKelas').value;
+            if (!kelas) {
+                document.getElementById('rekapKelas').innerHTML = '';
+                return;
+            }
+
+            const dataKelas = data.filter(item => item.kelas === kelas);
+            const siswaSet = new Set();
+            dataKelas.forEach(item => {
+                siswaSet.add(JSON.stringify({ nis: item.nis, nama: item.nama }));
+            });
+            const daftarSiswa = Array.from(siswaSet).map(item => JSON.parse(item));
+
+            let html = '<div class="table-responsive"><table class="table"><thead><tr><th>NIS</th><th>Nama</th><th>Rata-rata Nilai</th></tr></thead><tbody>';
+            
+            daftarSiswa.forEach(siswa => {
+                const nilaiSiswa = dataKelas.filter(item => item.nis === siswa.nis);
+                const totalNilai = nilaiSiswa.reduce((sum, item) => sum + item.nilai, 0);
+                const rataNilai = (totalNilai / nilaiSiswa.length).toFixed(2);
+                html += `<tr><td>${siswa.nis}</td><td>${siswa.nama}</td><td>${rataNilai}</td></tr>`;
+            });
+            
+            html += '</tbody></table></div>';
+            document.getElementById('rekapKelas').innerHTML = html;
+        }
+
+        function exportToExcel() {
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Penilaian Harian");
+            XLSX.writeFile(wb, "penilaian_harian.xlsx");
+            showAlert('Data berhasil diekspor ke Excel!', 'success');
+        }
+
+        function importFromExcel(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                
+                // Tambahkan predikat
+                jsonData.forEach(item => {
+                    item.predikat = hitungPredikat(item.nilai);
+                });
+                
+                // Simpan ke localStorage
+                data = jsonData;
+                saveDataToLocalStorage();
+                tampilkanPilihanSiswa();
+                tampilkanData();
+                
+                showAlert('Data berhasil diimport dari Excel!', 'success');
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function showSection(sectionId) {
+            // Hide all sections
+            const sections = document.querySelectorAll('.content-section');
+            sections.forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Show selected section
+            document.getElementById(sectionId + '-section').style.display = 'block';
+            
+            // Update active sidebar item
+            const sidebarItems = document.querySelectorAll('.sidebar-item');
+            sidebarItems.forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update content title
+            const titles = {
+                'dashboard': 'Dashboard',
+                'input': 'Input Penilaian',
+                'data': 'Data Penilaian',
+                'chart': 'Grafik Perkembangan',
+                'rekap': 'Rekap Kelas',
+                'rapor': 'Cetak Rapor',
+                'sync': 'Sinkronisasi'
+            };
+            document.querySelector('.content-title').textContent = titles[sectionId];
+        }
+
+        // Event Listeners
+        document.getElementById('formPenilaian').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nilai = parseInt(document.getElementById('nilai').value);
+            const predikat = hitungPredikat(nilai);
+            const newItem = {
+                tanggal: document.getElementById('tanggal').value,
+                nis: document.getElementById('nis').value,
+                nama: document.getElementById('nama').value,
+                kelas: document.getElementById('kelas').value,
+                mapel: document.getElementById('mapel').value,
+                aspek: document.getElementById('aspek').value,
+                deskripsi: document.getElementById('deskripsi').value,
+                nilai: nilai,
+                predikat: predikat
+            };
+            data.push(newItem);
+            saveDataToLocalStorage();
+            tampilkanData();
+            tampilkanPilihanSiswa();
+            this.reset();
+            showAlert('Data penilaian berhasil disimpan!', 'success');
+        });
+
+        // Inisialisasi
+        loadDataFromLocalStorage();
+    </script>
+</body>
+</html>
