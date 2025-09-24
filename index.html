@@ -1734,52 +1734,65 @@ kelasFormGroup.style.display = 'none';
 // Login form submission
 document.getElementById('loginFormElement').addEventListener('submit', function(e) {
 e.preventDefault();
+console.log("Login form submitted");
 
 const username = document.getElementById('username').value;
 const password = document.getElementById('password').value;
 const role = document.querySelector('.role-option.active').dataset.role;
 const kelas = document.getElementById('kelas').value;
 
+console.log("Login data:", { username, password, role, kelas });
+
 // Simple validation (in real app, this should be done against a database)
 if (username && password) {
 if (role === 'admin') {
 // Admin login
+console.log("Attempting admin login");
 if (username === 'admin' && password === 'admin') {
+console.log("Admin login successful");
 currentUser = { username: username, role: role };
 userRole = role;
 showMainApp();
 loadAdminData();
 } else {
+console.log("Admin login failed");
 showAlert('Username atau password salah!', 'danger');
 }
 } else {
 // Teacher login
+console.log("Attempting teacher login");
 if (kelas) {
 // Check if teacher exists in database
 checkTeacherLogin(username, password, kelas);
 } else {
+console.log("Teacher login failed: no class selected");
 showAlert('Silakan pilih kelas!', 'warning');
 }
 }
 } else {
+console.log("Login failed: missing username or password");
 showAlert('Username dan password tidak boleh kosong!', 'warning');
 }
 });
 
 // Check teacher login against database
 function checkTeacherLogin(username, password, kelas) {
+console.log("Checking teacher login:", { username, password, kelas });
 showLoading();
 
 database.ref('guru').orderByChild('username').equalTo(username).once('value')
 .then((snapshot) => {
 hideLoading();
+console.log("Teacher query result:", snapshot.exists());
 
 if (snapshot.exists()) {
 const teacherData = snapshot.val();
 const teacherKey = Object.keys(teacherData)[0];
 const teacher = teacherData[teacherKey];
+console.log("Teacher found:", teacher);
 
 if (teacher.password === password && teacher.kelas === kelas) {
+console.log("Teacher login successful");
 currentUser = {
 id: teacherKey,
 username: teacher.username,
@@ -1792,20 +1805,28 @@ userKelas = kelas;
 showMainApp();
 loadTeacherData();
 } else {
+console.log("Teacher login failed: wrong password or class");
 showAlert('Password atau kelas salah!', 'danger');
 }
 } else {
+console.log("Teacher not found");
 showAlert('Username tidak ditemukan!', 'danger');
 }
 })
 .catch((error) => {
 hideLoading();
+console.error("Error checking teacher login:", error);
 showAlert('Error: ' + error.message, 'danger');
 });
 }
 
 // Show main application
 function showMainApp() {
+console.log("Showing main app");
+console.log("Current user:", currentUser);
+console.log("User role:", userRole);
+console.log("User class:", userKelas);
+
 document.getElementById('loginForm').style.display = 'none';
 document.getElementById('mainApp').style.display = 'flex';
 
@@ -1816,12 +1837,14 @@ document.getElementById('subjectsMenu').style.display = 'block';
 document.getElementById('studentsMenu').style.display = 'block';
 document.getElementById('monitoringMenu').style.display = 'block';
 document.getElementById('settingsMenu').style.display = 'block';
+console.log("Admin menus shown");
 } else {
 document.getElementById('userInfo').textContent = currentUser.nama;
 document.getElementById('subjectsMenu').style.display = 'none';
 document.getElementById('studentsMenu').style.display = 'none';
 document.getElementById('monitoringMenu').style.display = 'none';
 document.getElementById('settingsMenu').style.display = 'none';
+console.log("Teacher menus shown");
 }
 
 // Load data based on role
@@ -1841,12 +1864,14 @@ loadSASData();
 
 // Load admin data
 function loadAdminData() {
+console.log("Loading admin data");
 updateDashboard();
 loadSubjectCards();
 }
 
 // Load teacher data
 function loadTeacherData() {
+console.log("Loading teacher data");
 updateDashboard();
 loadSubjectCards();
 loadPHData();
@@ -1856,132 +1881,28 @@ loadSASData();
 
 // Update dashboard statistics
 function updateDashboard() {
+console.log("Updating dashboard");
 if (userRole === 'admin') {
 // Admin dashboard
 document.getElementById('totalSiswa').textContent = siswaData.length;
 document.getElementById('totalMapel').textContent = mapelData.length;
-
-// Calculate completed assessments
-let totalPH = 0;
-let completedPH = 0;
-let totalPTS = 0;
-let completedPTS = 0;
-let totalSAS = 0;
-let completedSAS = 0;
-
-mapelData.forEach(mapel => {
-// PH data
-database.ref('ph/' + mapel.id).once('value').then((snapshot) => {
-if (snapshot.exists()) {
-const phData = snapshot.val();
-const phCount = Object.keys(phData).length;
-totalPH += siswaData.length;
-completedPH += phCount;
-} else {
-totalPH += siswaData.length;
-}
-
-// PTS data
-database.ref('pts/' + mapel.id).once('value').then((snapshot) => {
-if (snapshot.exists()) {
-const ptsData = snapshot.val();
-const ptsCount = Object.keys(ptsData).length;
-totalPTS += siswaData.length;
-completedPTS += ptsCount;
-} else {
-totalPTS += siswaData.length;
-}
-
-// SAS data
-database.ref('sas/' + mapel.id).once('value').then((snapshot) => {
-if (snapshot.exists()) {
-const sasData = snapshot.val();
-const sasCount = Object.keys(sasData).length;
-totalSAS += siswaData.length;
-completedSAS += sasCount;
-} else {
-totalSAS += siswaData.length;
-}
-
-// Update progress percentage
-const totalAssessments = totalPH + totalPTS + totalSAS;
-const completedAssessments = completedPH + completedPTS + completedSAS;
-const progressPercentage = totalAssessments > 0 ? Math.round((completedAssessments / totalAssessments) * 100) : 0;
-document.getElementById('progressPercentage').textContent = progressPercentage + '%';
-document.getElementById('totalPenilaian').textContent = completedAssessments;
-});
-});
-});
-});
+document.getElementById('progressPercentage').textContent = '0%';
+document.getElementById('totalPenilaian').textContent = '0';
+console.log("Admin dashboard updated");
 } else {
 // Teacher dashboard
 const siswaKelas = siswaData.filter(siswa => siswa.kelas === userKelas);
 document.getElementById('totalSiswa').textContent = siswaKelas.length;
 document.getElementById('totalMapel').textContent = mapelData.length;
-
-// Calculate completed assessments for this teacher
-let totalPH = 0;
-let completedPH = 0;
-let totalPTS = 0;
-let completedPTS = 0;
-let totalSAS = 0;
-let completedSAS = 0;
-
-mapelData.forEach(mapel => {
-// PH data
-database.ref('ph/' + mapel.id).once('value').then((snapshot) => {
-if (snapshot.exists()) {
-const phData = snapshot.val();
-const phCount = Object.values(phData).filter(ph => {
-return siswaKelas.some(siswa => siswa.nis === ph.nis);
-}).length;
-totalPH += siswaKelas.length;
-completedPH += phCount;
-} else {
-totalPH += siswaKelas.length;
-}
-
-// PTS data
-database.ref('pts/' + mapel.id).once('value').then((snapshot) => {
-if (snapshot.exists()) {
-const ptsData = snapshot.val();
-const ptsCount = Object.values(ptsData).filter(pts => {
-return siswaKelas.some(siswa => siswa.nis === pts.nis);
-}).length;
-totalPTS += siswaKelas.length;
-completedPTS += ptsCount;
-} else {
-totalPTS += siswaKelas.length;
-}
-
-// SAS data
-database.ref('sas/' + mapel.id).once('value').then((snapshot) => {
-if (snapshot.exists()) {
-const sasData = snapshot.val();
-const sasCount = Object.values(sasData).filter(sas => {
-return siswaKelas.some(siswa => siswa.nis === sas.nis);
-}).length;
-totalSAS += siswaKelas.length;
-completedSAS += sasCount;
-} else {
-totalSAS += siswaKelas.length;
-}
-
-// Update progress percentage
-const totalAssessments = totalPH + totalPTS + totalSAS;
-const completedAssessments = completedPH + completedPTS + completedSAS;
-const progressPercentage = totalAssessments > 0 ? Math.round((completedAssessments / totalAssessments) * 100) : 0;
-document.getElementById('progressPercentage').textContent = progressPercentage + '%';
-document.getElementById('totalPenilaian').textContent = completedAssessments;
-});
-});
-});
-});
+document.getElementById('progressPercentage').textContent = '0%';
+document.getElementById('totalPenilaian').textContent = '0';
+console.log("Teacher dashboard updated");
 }
 }
 
 // Load subject cards for dashboard
 function loadSubjectCards() {
+console.log("Loading subject cards");
 const container = document.getElementById('subjectCards');
 container.innerHTML = '';
 
@@ -1995,75 +1916,6 @@ const card = document.createElement('div');
 card.className = 'subject-card';
 card.onclick = () => openSubjectDashboard(mapel);
 
-// Calculate progress for this subject
-let progressPH = 0;
-let progressPTS = 0;
-let progressSAS = 0;
-let totalStudents = 0;
-
-if (userRole === 'admin') {
-totalStudents = siswaData.length;
-} else {
-totalStudents = siswaData.filter(siswa => siswa.kelas === userKelas).length;
-}
-
-database.ref('ph/' + mapel.id).once('value').then((snapshot) => {
-if (snapshot.exists()) {
-const phData = snapshot.val();
-let completedCount = 0;
-
-if (userRole === 'admin') {
-completedCount = Object.keys(phData).length;
-} else {
-// For teachers, only count students in their class
-const siswaKelas = siswaData.filter(siswa => siswa.kelas === userKelas);
-completedCount = Object.values(phData).filter(ph => {
-return siswaKelas.some(siswa => siswa.nis === ph.nis);
-}).length;
-}
-
-progressPH = totalStudents > 0 ? Math.round((completedCount / totalStudents) * 100) : 0;
-}
-
-database.ref('pts/' + mapel.id).once('value').then((snapshot) => {
-if (snapshot.exists()) {
-const ptsData = snapshot.val();
-let completedCount = 0;
-
-if (userRole === 'admin') {
-completedCount = Object.keys(ptsData).length;
-} else {
-// For teachers, only count students in their class
-const siswaKelas = siswaData.filter(siswa => siswa.kelas === userKelas);
-completedCount = Object.values(ptsData).filter(pts => {
-return siswaKelas.some(siswa => siswa.nis === pts.nis);
-}).length;
-}
-
-progressPTS = totalStudents > 0 ? Math.round((completedCount / totalStudents) * 100) : 0;
-}
-
-database.ref('sas/' + mapel.id).once('value').then((snapshot) => {
-if (snapshot.exists()) {
-const sasData = snapshot.val();
-let completedCount = 0;
-
-if (userRole === 'admin') {
-completedCount = Object.keys(sasData).length;
-} else {
-// For teachers, only count students in their class
-const siswaKelas = siswaData.filter(siswa => siswa.kelas === userKelas);
-completedCount = Object.values(sasData).filter(sas => {
-return siswaKelas.some(siswa => siswa.nis === sas.nis);
-}).length;
-}
-
-progressSAS = totalStudents > 0 ? Math.round((completedCount / totalStudents) * 100) : 0;
-}
-
-// Calculate overall progress
-const overallProgress = Math.round((progressPH + progressPTS + progressSAS) / 3);
-
 // Create card HTML
 card.innerHTML = `
 <div class="subject-header">
@@ -2075,32 +1927,32 @@ card.innerHTML = `
 <div class="subject-progress">
 <div class="progress-header">
 <div class="progress-title">Progress Pengisian Nilai</div>
-<div class="progress-percentage">${overallProgress}%</div>
+<div class="progress-percentage">0%</div>
 </div>
 <div class="progress-bar">
-<div class="progress-fill" style="width: ${overallProgress}%"></div>
+<div class="progress-fill" style="width: 0%"></div>
 </div>
 <div style="margin-top: 10px; font-size: 12px;">
-<div>PH: ${progressPH}%</div>
-<div>PTS: ${progressPTS}%</div>
-<div>SAS: ${progressSAS}%</div>
+<div>PH: 0%</div>
+<div>PTS: 0%</div>
+<div>SAS: 0%</div>
 </div>
 </div>
 `;
 
 container.appendChild(card);
 });
-});
-});
-});
+console.log("Subject cards loaded");
 }
 
 // Load subjects data
 function loadMapelData() {
+console.log("Loading mapel data");
 showLoading();
 database.ref('mapel').once('value')
 .then((snapshot) => {
 hideLoading();
+console.log("Mapel data loaded:", snapshot.exists());
 if (snapshot.exists()) {
 mapelData = [];
 snapshot.forEach((childSnapshot) => {
@@ -2109,6 +1961,7 @@ id: childSnapshot.key,
 ...childSnapshot.val()
 });
 });
+console.log("Mapel data:", mapelData);
 
 // Update subject selects
 updateSubjectSelects();
@@ -2127,6 +1980,7 @@ updateMapelTable();
 })
 .catch((error) => {
 hideLoading();
+console.error("Error loading mapel data:", error);
 showAlert('Error loading subjects: ' + error.message, 'danger');
 });
 }
@@ -2179,10 +2033,12 @@ tbody.appendChild(row);
 
 // Load students data
 function loadSiswaData() {
+console.log("Loading siswa data");
 showLoading();
 database.ref('siswa').once('value')
 .then((snapshot) => {
 hideLoading();
+console.log("Siswa data loaded:", snapshot.exists());
 if (snapshot.exists()) {
 siswaData = [];
 snapshot.forEach((childSnapshot) => {
@@ -2191,6 +2047,7 @@ id: childSnapshot.key,
 ...childSnapshot.val()
 });
 });
+console.log("Siswa data:", siswaData);
 
 // Update student selects
 updateStudentSelects();
@@ -2209,16 +2066,19 @@ updateSiswaTable();
 })
 .catch((error) => {
 hideLoading();
+console.error("Error loading siswa data:", error);
 showAlert('Error loading students: ' + error.message, 'danger');
 });
 }
 
 // Load students by class
 function loadSiswaByKelas(kelas) {
+console.log("Loading siswa by class:", kelas);
 showLoading();
 database.ref('siswa').orderByChild('kelas').equalTo(kelas).once('value')
 .then((snapshot) => {
 hideLoading();
+console.log("Siswa by class loaded:", snapshot.exists());
 if (snapshot.exists()) {
 siswaData = [];
 snapshot.forEach((childSnapshot) => {
@@ -2227,6 +2087,7 @@ id: childSnapshot.key,
 ...childSnapshot.val()
 });
 });
+console.log("Siswa by class data:", siswaData);
 
 // Update student selects
 updateStudentSelects();
@@ -2237,6 +2098,7 @@ updateStudentSelects();
 })
 .catch((error) => {
 hideLoading();
+console.error("Error loading siswa by class:", error);
 showAlert('Error loading students: ' + error.message, 'danger');
 });
 }
@@ -2297,10 +2159,12 @@ updateSiswaTable();
 
 // Load teachers data
 function loadGuruData() {
+console.log("Loading guru data");
 showLoading();
 database.ref('guru').once('value')
 .then((snapshot) => {
 hideLoading();
+console.log("Guru data loaded:", snapshot.exists());
 if (snapshot.exists()) {
 guruData = [];
 snapshot.forEach((childSnapshot) => {
@@ -2309,6 +2173,7 @@ id: childSnapshot.key,
 ...childSnapshot.val()
 });
 });
+console.log("Guru data:", guruData);
 
 // If we're on the settings section, update the table
 if (document.getElementById('settings-section').style.display !== 'none') {
@@ -2323,6 +2188,7 @@ updateGuruTable();
 })
 .catch((error) => {
 hideLoading();
+console.error("Error loading guru data:", error);
 showAlert('Error loading teachers: ' + error.message, 'danger');
 });
 }
@@ -2374,6 +2240,7 @@ console.log('Logo not found or error loading:', error);
 
 // Load PH data
 function loadPHData() {
+console.log("Loading PH data");
 showLoading();
 phData = {};
 
@@ -2420,6 +2287,7 @@ showAlert('Error loading PH data: ' + error.message, 'danger');
 
 // Load PTS data
 function loadPTSData() {
+console.log("Loading PTS data");
 showLoading();
 ptsData = {};
 
@@ -2466,6 +2334,7 @@ showAlert('Error loading PTS data: ' + error.message, 'danger');
 
 // Load SAS data
 function loadSASData() {
+console.log("Loading SAS data");
 showLoading();
 sasData = {};
 
@@ -4162,6 +4031,7 @@ showAlert(`Dashboard untuk ${mapel.nama} belum tersedia`, 'info');
 
 // Initialize the app
 document.addEventListener('DOMContentLoaded', function() {
+console.log("DOM loaded");
 // Check if user is already logged in (from localStorage)
 const savedUser = localStorage.getItem('currentUser');
 if (savedUser) {
@@ -4171,6 +4041,7 @@ userRole = currentUser.role;
 if (userRole === 'guru') {
 userKelas = currentUser.kelas;
 }
+console.log("User found in localStorage:", currentUser);
 showMainApp();
 if (userRole === 'admin') {
 loadAdminData();
