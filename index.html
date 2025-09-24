@@ -862,7 +862,7 @@ overflow-x: auto;
 <div class="role-option" data-role="guru">Guru Kelas</div>
 </div>
 </div>
-<div class="form-group">
+<div class="form-group" id="kelasFormGroup" style="display: none;">
 <label for="kelas">Kelas (untuk Guru)</label>
 <select id="kelas" class="form-control">
 <option value="">-- Pilih Kelas --</option>
@@ -1721,6 +1721,13 @@ document.querySelectorAll('.role-option').forEach(opt => {
 opt.classList.remove('active');
 });
 this.classList.add('active');
+const selectedRole = this.dataset.role;
+const kelasFormGroup = document.getElementById('kelasFormGroup');
+if (selectedRole === 'guru') {
+kelasFormGroup.style.display = 'block';
+} else {
+kelasFormGroup.style.display = 'none';
+}
 });
 });
 
@@ -3003,7 +3010,7 @@ return;
 }
 
 // Collect all student data
-const phData = [];
+const phDataArray = [];
 const nilaiInputs = document.querySelectorAll('.nilai-input');
 let hasData = false;
 
@@ -3014,7 +3021,7 @@ const predikat = getPredikat(nilai);
 
 if (nilai > 0) {
 hasData = true;
-phData.push({
+phDataArray.push({
 nis: nis,
 nilai: nilai,
 predikat: predikat
@@ -3033,7 +3040,7 @@ const phRef = database.ref('ph/' + mapelId).push();
 phRef.set({
 tanggal: tanggal,
 deskripsi: deskripsi,
-data: phData
+data: phDataArray
 })
 .then(() => {
 hideLoading();
